@@ -212,25 +212,11 @@ jobs:
           head -n 100 "${VCPKG_ROOT}/buildtrees/ffmpeg/build-${{ matrix.job.vcpkg-triplet }}-rel-out.log" || true
         shell: bash
 
-      - name: Enable Stealth Hide-CM Patch
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          import glob, re
-          patched = 0
-          for path in glob.glob('src/**/*.rs', recursive=True) + glob.glob('libs/**/*.rs', recursive=True):
-              with open(path, 'r', encoding='utf-8', errors='ignore') as f:
-                  s = f.read()
-              s2 = re.sub(r'(pub\s+fn\s+allow_hide_cm\s*\([^)]*\)\s*->\s*bool\s*\{)', r'\1 return true;', s)
-              if s2 != s:
-                  with open(path, 'w', encoding='utf-8') as f:
-                      f.write(s2)
-                  print(f"Patched allow_hide_cm in {path}")
-                  patched += 1
-          print(f"Total patched files: {patched}")
-          PY
-
-      - name: Build rustdesk
+    - name: Enable Stealth Hide-CM Patch
+    shell: bash
+    run: |
+      find src libs -name "*.rs" -exec sed -i 's/pub fn allow_hide_cm() -> bool {/pub fn allow_hide_cm() -> bool { return true;/g' {} +
+       - name: Build rustdesk
         env:
           RENDEZVOUS_SERVER: ${{ secrets.RENDEZVOUS_SERVER }}
           RS_PUB_KEY: ${{ secrets.RS_PUB_KEY }}
