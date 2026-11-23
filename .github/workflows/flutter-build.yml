@@ -201,7 +201,32 @@ jobs:
       - name: Enable Stealth Hide-CM Patch
         shell: bash
         run: |
-          find src libs -name "*.rs" -exec sed -i 's/pub fn allow_hide_cm() -> bool {/pub fn allow_hide_cm() -> bool { return true;/g' {} +
+          python3 -c "
+          import pathlib, re
+
+          # 1. Patch σε όλα τα Rust αρχεία (src & libs)
+          for p in list(pathlib.Path('src').rglob('*.rs')) + list(pathlib.Path('libs').rglob('*.rs')):
+              txt = p.read_text(encoding='utf-8', errors='ignore')
+              if 'allow_hide_cm' in txt:
+                  new_txt = re.sub(
+                      r'(pub(?:\(crate\))?\s+fn\s+allow_hide_cm\s*\([^)]*\)\s*->\s*bool\s*\{)',
+                      r'\1 return true;',
+                      txt
+                  )
+                  if new_txt != txt:
+                      p.write_text(new_txt, encoding='utf-8')
+                      print('Patched Rust:', p)
+
+          # 2. Patch στο Flutter UI (Dart) ώστε να εμφανίζεται και το checkbox στις ρυθμίσεις
+          for p in pathlib.Path('flutter/lib').rglob('*.dart'):
+              txt = p.read_text(encoding='utf-8', errors='ignore')
+              if 'allowHideCm' in txt or 'allow_hide_cm' in txt:
+                  new_txt = re.sub(r'bool\s+get\s+allowHideCm\s*=>[^;]+;', 'bool get allowHideCm => true;', txt)
+                  new_txt = re.sub(r'bool\s+allowHideCm\s*\([^)]*\)\s*\{', 'bool allowHideCm() { return true;', new_txt)
+                  if new_txt != txt:
+                      p.write_text(new_txt, encoding='utf-8')
+                      print('Patched Dart:', p)
+          "
 
       - name: Build rustdesk
         env:
