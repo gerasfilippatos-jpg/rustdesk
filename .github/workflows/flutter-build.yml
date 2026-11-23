@@ -92,7 +92,7 @@ jobs:
   build-RustDeskTempTopMostWindow:
     needs: [validate-update-metadata-keys]
     uses: ./.github/workflows/third-party-RustDeskTempTopMostWindow.yml
-    strategy:
+strategy:
       fail-fast: false
       matrix:
         job:
@@ -106,7 +106,6 @@ jobs:
       configuration: Release
       platform: ${{ matrix.job.platform }}
       target_version: Windows10
-
   build-for-windows-flutter:
     name: ${{ matrix.job.target }}
     needs: [build-RustDeskTempTopMostWindow, generate-bridge]
@@ -122,7 +121,7 @@ jobs:
               flutter-arch: x64,
               vcpkg-triplet: x64-windows-static,
               build-args: "--vram",
-            }
+            }    
     steps:
       - name: Export GitHub Actions cache environment variables
         uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6
